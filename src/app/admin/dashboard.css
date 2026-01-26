@@ -1,0 +1,3 @@
+/* Admin specific styles */
+.sidebar { z-index: 1000; }
+.main { padding: 24px; }
