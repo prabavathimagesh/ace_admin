@@ -7,7 +7,7 @@ async function wrap(promise) {
     return res;
   } catch (err) {
     return {
-      success: false,
+      status: false,
       message: err.response?.data?.message || "Something went wrong",
       status: err.response?.status || 500,
     };

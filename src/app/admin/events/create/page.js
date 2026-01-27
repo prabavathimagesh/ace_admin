@@ -87,7 +87,7 @@ export default function EventFormPage() {
       ? await updateEventApi(form.orgId, eventId, payload)
       : await createEventApi(form.orgId, payload);
 
-    if (res.success) {
+    if (res.status) {
       setMsg(isEdit ? EVENT_UPDATED_SUCCESS : EVENT_CREATED_SUCCESS);
       setTimeout(() => router.push(ROUTER_ADMIN_EVENTS), 700);
     } else {
