@@ -15,6 +15,101 @@ async function wrap(promise) {
     };
   }
 }
+/* ============================================================
+   EVENT TYPE (FORM-DATA BASED) ✅
+   ============================================================ */
+
+// LIST
+export const fetchEventTypesApi = () => {
+  return wrap(api.get("/v1/master/event-types"));
+};
+
+// CREATE (form-data)
+export const createEventTypeApi = (formData) => {
+  return wrap(
+    api.post("/v1/master/event-types", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  );
+};
+
+// UPDATE (form-data)
+export const updateEventTypeApi = (identity, formData) => {
+  return wrap(
+    api.put(`/v1/master/event-types/${identity}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  );
+};
+
+// DELETE
+export const deleteEventTypeApi = (identity) => {
+  return wrap(api.delete(`/v1/master/event-types/${identity}`));
+};
+
+/* =======================
+   LOCATION – COUNTRY
+======================= */
+export const fetchCountriesApi = () => wrap(api.get("/v1/location/countries"));
+
+export const fetchCountryApi = (id) =>
+  wrap(api.get(`/v1/location/countries/${id}`));
+
+export const createCountryApi = (data) =>
+  wrap(api.post("/v1/location/countries", data));
+
+export const bulkCreateCountriesApi = (data) =>
+  wrap(api.post("/v1/location/countries/bulk", data));
+
+export const updateCountryApi = (id, data) =>
+  wrap(api.put(`/v1/location/countries/${id}`, data));
+
+export const deleteCountryApi = (id) =>
+  wrap(api.delete(`/v1/location/countries/${id}`));
+
+/* =======================
+   LOCATION – STATE
+======================= */
+export const fetchStatesApi = () => wrap(api.get("/v1/location/states"));
+
+export const fetchStateApi = (id) => wrap(api.get(`/v1/location/states/${id}`));
+
+export const fetchStatesByCountryApi = (countryId) =>
+  wrap(api.get(`/v1/location/countries/${countryId}/states`));
+
+export const createStateApi = (countryId, data) =>
+  wrap(api.post(`/v1/location/countries/${countryId}/states`, data));
+
+export const bulkCreateStatesApi = (countryId, data) =>
+  wrap(api.post(`/v1/location/countries/${countryId}/states/bulk`, data));
+
+export const updateStateApi = (id, data) =>
+  wrap(api.put(`/v1/location/states/${id}`, data));
+
+export const deleteStateApi = (id) =>
+  wrap(api.delete(`/v1/location/states/${id}`));
+
+/* =======================
+   LOCATION – CITY
+======================= */
+export const fetchCitiesApi = () => wrap(api.get("/v1/location/cities"));
+
+export const fetchCityApi = (id) => wrap(api.get(`/v1/location/cities/${id}`));
+
+export const fetchCitiesByStateApi = (stateId) =>
+  wrap(api.get(`/v1/location/states/${stateId}/cities`));
+
+export const createCityApi = (stateId, data) =>
+  wrap(api.post(`/v1/location/states/${stateId}/cities`, data));
+
+export const bulkCreateCitiesApi = (stateId, data) =>
+  wrap(api.post(`/v1/location/states/${stateId}/cities/bulk`, data));
+
+export const updateCityApi = (id, data) =>
+  wrap(api.put(`/v1/location/cities/${id}`, data));
+
+export const deleteCityApi = (id) =>
+  wrap(api.delete(`/v1/location/cities/${id}`));
 
 /* ============================================================
    GENERIC MASTER CRUD (🔥 CORE)
@@ -151,7 +246,6 @@ export const deleteFaqApi = (identity) => {
   return wrap(api.delete(`/v1/master/faqs/${identity}`));
 };
 
-
 /* ============================================================
    MASTER PATH CONSTANTS (🔥 IMPORTANT)
    ============================================================ */
@@ -175,5 +269,5 @@ export const MASTER_PATHS = {
   // CONTENT
   FAQ: "/faqs",
   PRIVACY_POLICY: "/privacy-policies",
-  TERMS: "/terms"
+  TERMS: "/terms",
 };

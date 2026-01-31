@@ -4,11 +4,10 @@ import CrudLayout from './CrudLayout';
 import EventTypeFormModal from './EventTypeFormModal';
 
 import {
-  fetchMasterListApi,
-  createMasterApi,
-  updateMasterApi,
-  deleteMasterApi,
-  MASTER_PATHS
+  fetchEventTypesApi,
+  createEventTypeApi,
+  updateEventTypeApi,
+  deleteEventTypeApi
 } from '@/lib/api/master.api';
 
 export default function EventType() {
@@ -17,9 +16,9 @@ export default function EventType() {
   const [editRow, setEditRow] = useState(null);
 
   const loadData = async () => {
-    const res = await fetchMasterListApi(MASTER_PATHS.EVENT_TYPE);
-    if (res?.data) {
-      setData(res.data);
+    const res = await fetchEventTypesApi();
+    if (res?.data?.status) {
+      setData(res.data.data);
     }
   };
 
@@ -27,18 +26,14 @@ export default function EventType() {
     loadData();
   }, []);
 
-  const handleCreate = async (payload) => {
-    await createMasterApi(MASTER_PATHS.EVENT_TYPE, payload);
+  const handleCreate = async (formData) => {
+    await createEventTypeApi(formData);
     setShowModal(false);
     loadData();
   };
 
-  const handleUpdate = async (payload) => {
-    await updateMasterApi(
-      MASTER_PATHS.EVENT_TYPE,
-      editRow.identity,
-      payload
-    );
+  const handleUpdate = async (formData) => {
+    await updateEventTypeApi(editRow.identity, formData);
     setEditRow(null);
     setShowModal(false);
     loadData();
@@ -46,7 +41,7 @@ export default function EventType() {
 
   const handleDelete = async (identity) => {
     if (!confirm('Delete this Event Type?')) return;
-    await deleteMasterApi(MASTER_PATHS.EVENT_TYPE, identity);
+    await deleteEventTypeApi(identity);
     loadData();
   };
 
@@ -64,6 +59,7 @@ export default function EventType() {
             <tr>
               <th>Name</th>
               <th>Color</th>
+              <th>Image</th>
               <th width="160">Action</th>
             </tr>
           </thead>
@@ -75,12 +71,17 @@ export default function EventType() {
                   <span
                     style={{
                       background: row.color,
-                      padding: '4px 12px',
-                      color: '#fff'
+                      color: '#fff',
+                      padding: '4px 10px'
                     }}
                   >
                     {row.color}
                   </span>
+                </td>
+                <td>
+                  {row.imageUrl && (
+                    <img src={row.imageUrl} width="40" />
+                  )}
                 </td>
                 <td>
                   <button
