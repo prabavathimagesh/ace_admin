@@ -14,7 +14,8 @@ export default function OrganiserList() {
     async function loadOrganizers() {
       try {
         const res = await fetchOrganizationsApi();
-        if (res.success) {
+        console.log("oooooooo",res)
+        if (res.status) {
           setOrganizers(res.data.data || []);
         }
       } catch (err) {

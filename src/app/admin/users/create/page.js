@@ -85,7 +85,7 @@ export default function UserFormPage() {
       res = await createUserApi(payload);
     }
 
-    if (res.success) {
+    if (res.status) {
       setMsg(isEdit ? CONDITION_CREATE_USER : CONDITION_CREATE_USER);
       setTimeout(() => router.push("/admin/users"), 700);
     } else {

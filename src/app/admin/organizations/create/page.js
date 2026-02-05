@@ -79,7 +79,7 @@ export default function OrganizationFormPage() {
       ? await updateOrganizationApi(editId, payload)
       : await createOrganizationApi(payload);
 
-    if (res.success) {
+    if (res.status) {
       setMsg(isEdit ? ORGANIZATION_UPDATED_SUCCESS : ORGANIZATION_CREATED_SUCCESS);
       setTimeout(() => router.push("/admin/organizations"), 800);
     } else {
