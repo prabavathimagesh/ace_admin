@@ -1,33 +1,72 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Table from "../../../components/Table";
 import DeleteModal from "../../../components/DeleteModal";
 import SearchInput from "../../../components/SearchInput";
+import Pagination from "../../../components/Pagination";
 import { useParams, useRouter } from "next/navigation";
 
 import {
   fetchEventsByOrganizationIdApi,
   deleteEventApi,
 } from "../../../../../lib/apiClient";
-import { ALL_LC, BTN_BACK, COLUMNS_KEY_EVENT_ACTIONS, COLUMNS_KEY_EVENT_DATA, COLUMNS_KEY_EVENT_ORG_NAME, COLUMNS_KEY_EVENT_TIME, COLUMNS_KEY_MODE, COLUMNS_KEY_SNO, COLUMNS_KEY_STATUS, COLUMNS_KEY_TITLE, CONDITION_ACTIVE, EVENT_ADDRESS, EVENT_CREATED_AT, EVENT_DOMAIN_EMAIL, EVENT_MODE, EVENT_STATUSS, LABELS_ACTIONS, LABELS_DATE, LABELS_EVENT_NAME, LABELS_ORGANIZER, LABELS_PAST, LABELS_S_NO, LABELS_TIME, LABELS_UPCOMING, OFFLINE, ONLINE, PLACEHOLDER_SEARCH, SIDEBAR_EVENTS, TITEL_ORGANIZATION } from "../../../../../constants/config-message";
+import { 
+  ALL_LC, 
+  BTN_BACK, 
+  COLUMNS_KEY_EVENT_ACTIONS, 
+  COLUMNS_KEY_EVENT_DATA, 
+  COLUMNS_KEY_MODE, 
+  COLUMNS_KEY_SNO, 
+  COLUMNS_KEY_STATUS, 
+  COLUMNS_KEY_TITLE, 
+  EVENT_MODE, 
+  EVENT_STATUSS, 
+  LABELS_ACTIONS, 
+  LABELS_DATE, 
+  LABELS_EVENT_NAME, 
+  LABELS_PAST, 
+  LABELS_S_NO, 
+  LABELS_UPCOMING, 
+  OFFLINE, 
+  ONLINE, 
+  PLACEHOLDER_SEARCH, 
+} from "../../../../../constants/config-message";
 
 export default function OrgEvents() {
   const { orgId } = useParams();
   const router = useRouter();
 
   const [tab, setTab] = useState(ALL_LC);
-  const [rows, setRows] = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
   const [orgInfo, setOrgInfo] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Pagination & Sorting
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [sortConfig, setSortConfig] = useState({ key: COLUMNS_KEY_TITLE, direction: 'asc' });
 
   async function load() {
-    const res = await fetchEventsByOrganizationIdApi(orgId);
-    let list = res.data?.data || [];
+    setLoading(true);
+    try {
+      const res = await fetchEventsByOrganizationIdApi(orgId);
+      const list = res.data?.data || [];
+      if (list.length > 0) setOrgInfo(list[0].org || null);
+      setAllEvents(list);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    // ORG INFO
-    if (list.length > 0) setOrgInfo(list[0].org || null);
+  useEffect(() => {
+    load();
+  }, [orgId]);
+
+  const filteredAndSortedEvents = useMemo(() => {
+    let list = [...allEvents];
 
     // TAB FILTER
     if (tab === ONLINE) list = list.filter((e) => e.mode === ONLINE);
@@ -37,135 +76,173 @@ export default function OrgEvents() {
     if (tab === LABELS_PAST)
       list = list.filter((e) => new Date(e.eventDate) < new Date());
 
-    // 🔍 SEARCH
+    // SEARCH
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
         (e) =>
           e.title?.toLowerCase().includes(q) ||
           e.mode?.toLowerCase().includes(q) ||
-          e.status?.toLowerCase().includes(q)
+          e.status?.toLowerCase().includes(q) ||
+          e.categoryName?.toLowerCase().includes(q)
       );
     }
 
-    setRows(list);
-  }
+    // SORTING
+    if (sortConfig.key) {
+      list.sort((a, b) => {
+        const valA = a[sortConfig.key] || '';
+        const valB = b[sortConfig.key] || '';
+        if (typeof valA === 'string') {
+          return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        }
+        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+      });
+    }
 
-  useEffect(() => {
-    load();
-  }, [tab, search]);
+    return list;
+  }, [allEvents, tab, search, sortConfig]);
+
+  const paginatedEvents = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedEvents.slice(start, start + itemsPerPage);
+  }, [filteredAndSortedEvents, currentPage]);
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
 
   const columns = [
-    { key: COLUMNS_KEY_SNO, label: LABELS_S_NO },
-    { key: COLUMNS_KEY_TITLE, label: LABELS_EVENT_NAME },
-    { key: COLUMNS_KEY_EVENT_DATA, label: LABELS_DATE },
-    { key: COLUMNS_KEY_EVENT_TIME, label: LABELS_TIME },
-    { key: COLUMNS_KEY_MODE, label: EVENT_MODE },
-    { key: COLUMNS_KEY_STATUS, label: EVENT_STATUSS },
-    { key: COLUMNS_KEY_EVENT_ORG_NAME, label: LABELS_ORGANIZER },
-    { key: COLUMNS_KEY_EVENT_ACTIONS, label: LABELS_ACTIONS },
+    { key: COLUMNS_KEY_SNO, label: LABELS_S_NO, sortable: false },
+    { key: COLUMNS_KEY_TITLE, label: LABELS_EVENT_NAME, sortable: true },
+    { key: "categoryName", label: "Category", sortable: true },
+    { key: "modeBadge", label: EVENT_MODE, sortable: true },
+    { key: "statusBadge", label: EVENT_STATUSS, sortable: true },
+    { key: "dateDisplay", label: LABELS_DATE, sortable: true },
+    { key: "engagement", label: "Engagement", sortable: false },
+    { key: COLUMNS_KEY_EVENT_ACTIONS, label: LABELS_ACTIONS, sortable: false },
   ];
 
-  const displayRows = rows.map((item, i) => ({
+  const rows = paginatedEvents.map((item, i) => ({
     ...item,
-    sno: i + 1,
-    orgName: item?.org?.organizationName ?? "-",
+    sno: (currentPage - 1) * itemsPerPage + i + 1,
+    dateDisplay: (
+      <div className="small">
+        <div className="fw-bold">{new Date(item.eventDate).toLocaleDateString()}</div>
+        <div className="text-muted">{item.eventTime}</div>
+      </div>
+    ),
+    modeBadge: (
+      <span className={`badge border ${item.mode === ONLINE ? 'border-primary text-primary' : 'border-dark text-dark'} rounded-pill px-3`}>
+        <i className={`bi ${item.mode === ONLINE ? 'bi-globe' : 'bi-geo-alt'} me-1`}></i>
+        {item.mode}
+      </span>
+    ),
+    statusBadge: (
+      <span className={`badge-pill ${item.status === 'APPROVED' ? 'bg-success' : item.status === 'REJECTED' ? 'bg-danger' : 'bg-warning'}`}>
+        {item.status}
+      </span>
+    ),
+    engagement: (
+      <div className="d-flex gap-3 small text-muted fw-bold">
+        <span><i className="bi bi-eye me-1"></i>{item.viewCount || 0}</span>
+        <span><i className="bi bi-heart me-1 text-danger"></i>{item.likeCount || 0}</span>
+      </div>
+    ),
+    actions: (
+      <div className="d-flex gap-2">
+        <button className="btn btn-sm btn-light shadow-sm text-primary" onClick={(e) => { e.stopPropagation(); router.push(`/admin/events/create?id=${item.identity}&orgId=${item.orgIdentity}`); }}>
+          <i className="bi bi-pencil"></i>
+        </button>
+        <button className="btn btn-sm btn-light shadow-sm text-danger" onClick={(e) => { e.stopPropagation(); setDeleteItem(item); }}>
+          <i className="bi bi-trash"></i>
+        </button>
+      </div>
+    )
   }));
 
   return (
-    <div className="p-4 shadow-none bg-body-tertiary rounded">
-      {/* BACK */}
-      <button
-        className="btn btn-outline-secondary mb-4"
-        onClick={() => router.back()}
-      >
-        {BTN_BACK}
-      </button>
-
-      {/* ORG INFO */}
-      {orgInfo && (
-        <div
-          className="card shadow-sm p-4 mb-4"
-          style={{ borderRadius: "14px" }}
+    <div className="container-fluid py-4 px-lg-4">
+      {/* HEADER */}
+      <div className="d-flex align-items-center mb-5">
+        <button
+          className="btn btn-white shadow-sm rounded-circle me-3 d-flex align-items-center justify-content-center hover-lift"
+          style={{ width: '45px', height: '45px' }}
+          onClick={() => router.push(`/admin/organizations/${orgId}`)}
         >
-          <div className="d-flex justify-content-between mb-4">
-            <h3 className="fw-bold">
-              {TITEL_ORGANIZATION} : {orgInfo.organizationName.toUpperCase()}
-            </h3>
-            <span className="badge bg-dark px-3 py-2 fs-6">
-              {orgInfo.organizationCategory?.toUpperCase()}
-            </span>
-          </div>
-
-          <div className="row g-4">
-            <div className="col-md-4">
-              <div className="p-3 border rounded bg-light">
-                <div className="fw-bold small text-secondary">{EVENT_DOMAIN_EMAIL}</div>
-                <div className="fw-semibold mt-2">{orgInfo.domainEmail}</div>
-              </div>
-            </div>
-
-            <div className="col-md-4">
-              <div className="p-3 border rounded bg-light">
-                <div className="fw-bold small text-secondary">{EVENT_ADDRESS}</div>
-                <div className="fw-semibold mt-2">
-                  {orgInfo.city}, {orgInfo.state}, {orgInfo.country}
-                </div>
-              </div>
-            </div>
-
-            <div className="col-md-4">
-              <div className="p-3 border rounded bg-light">
-                <div className="fw-bold small text-secondary">{EVENT_CREATED_AT}</div>
-                <div className="fw-semibold mt-2">
-                  {new Date(orgInfo.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-          </div>
+          <i className="bi bi-arrow-left fs-5"></i>
+        </button>
+        <div>
+          <h2 className="fw-black text-dark m-0">Organization Events</h2>
+          <p className="text-muted m-0 small">Events published by <span className="fw-bold text-primary">{orgInfo?.organizationName || orgId}</span></p>
         </div>
-      )}
-
-      {/* TITLE */}
-      <h2>{SIDEBAR_EVENTS}</h2>
-
-      {/* TABS */}
-      <ul className="nav nav-tabs my-3">
-        {[ALL_LC, ONLINE, OFFLINE, LABELS_UPCOMING, LABELS_PAST].map((t) => (
-          <li key={t} className="nav-item">
-            <button
-              className={"nav-link " + (tab === t ? CONDITION_ACTIVE : "")}
-              onClick={() => setTab(t)}
-            >
-              {t.toUpperCase()}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {/* SEARCH */}
-      <div className="d-flex justify-content-between align-items-center mb-4 mt-5">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={PLACEHOLDER_SEARCH}
-        />
       </div>
 
-      {/* TABLE */}
-      <Table
-        columns={columns}
-        rows={displayRows}
-        onRowClick={(r) =>
-          router.push(`/admin/events/${r.orgIdentity}/${r.identity}`)
-        }
-        onEdit={(r) =>
-          router.push(
-            `/admin/events/create?id=${r.identity}&orgId=${r.orgIdentity}`
-          )
-        }
-        onDelete={(r) => setDeleteItem(r)}
-      />
+      {/* TABS & SEARCH */}
+      <div className="bg-white p-3 rounded-4 shadow-sm border mb-4 animate-fade-in">
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div className="nav nav-pills custom-pills-sm bg-light p-1 rounded-3">
+            {[ALL_LC, ONLINE, OFFLINE, LABELS_UPCOMING, LABELS_PAST].map((t) => (
+              <button
+                key={t}
+                className={`nav-link border-0 small fw-bold text-uppercase px-3 py-1 ${tab === t ? 'active shadow-sm' : 'text-secondary'}`}
+                onClick={() => { setTab(t); setCurrentPage(1); }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ minWidth: '300px' }}>
+            <SearchInput
+              value={search}
+              onChange={(val) => { setSearch(val); setCurrentPage(1); }}
+              placeholder="Search event title, status or mode..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* TABLE SECTION */}
+      <div className="bg-white rounded-4 shadow-sm border overflow-hidden animate-fade-in-delayed">
+        {loading ? (
+          <div className="p-5 text-center">
+            <div className="spinner-border text-primary" role="status"></div>
+            <p className="mt-2 text-muted fw-bold">Gathering events...</p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <Table
+              columns={columns}
+              rows={rows}
+              sortConfig={sortConfig}
+              onSort={handleSort}
+              onRowClick={(r) => router.push(`/admin/events/${r.orgIdentity}/${r.identity}`)}
+            />
+            {rows.length === 0 && (
+              <div className="p-5 text-center text-muted">
+                <i className="bi bi-calendar-x fs-1 opacity-25 d-block mb-3"></i>
+                No events found matching your current filters.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* PAGINATION */}
+      {!loading && filteredAndSortedEvents.length > itemsPerPage && (
+        <div className="mt-4 d-flex justify-content-center">
+          <Pagination 
+            page={currentPage} 
+            total={filteredAndSortedEvents.length} 
+            limit={itemsPerPage} 
+            onChange={setCurrentPage} 
+          />
+        </div>
+      )}
 
       {/* DELETE MODAL */}
       <DeleteModal
@@ -178,6 +255,38 @@ export default function OrgEvents() {
           load();
         }}
       />
+
+      <style jsx>{`
+        .fw-black { font-weight: 900; }
+        .custom-pills-sm .nav-link {
+          border-radius: 6px;
+          transition: all 0.2s ease;
+          font-size: 0.65rem;
+          letter-spacing: 0.05em;
+        }
+        .custom-pills-sm .nav-link.active {
+          background-color: white;
+          color: #4f46e5 !important;
+        }
+        .badge-pill {
+          padding: 0.4rem 0.8rem;
+          border-radius: 50px;
+          font-weight: 700;
+          font-size: 0.65rem;
+          color: white;
+          letter-spacing: 0.05em;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
+        .animate-fade-in-delayed { animation: fadeIn 0.4s ease 0.2s forwards; opacity: 0; }
+        .hover-lift:hover {
+          transform: scale(1.05);
+          background-color: #f8f9fa !important;
+        }
+      `}</style>
     </div>
   );
 }

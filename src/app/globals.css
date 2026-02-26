@@ -1,7 +1,122 @@
 @import url('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css');
+@import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
-:root { --bs-body-font-size: 0.95rem; }
-body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin: 0; }
-.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 250px; padding-top: 1rem; background: #f8f9fa; border-right: 1px solid #e5e5e5; }
-.main { margin-left: 250px; padding: 1rem; }
-.table-dark thead th { background: #212529; color: #fff; }
+:root { 
+  --bs-body-font-size: 0.95rem; 
+  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+}
+
+body { 
+  font-family: 'Outfit', 'Inter', -apple-system, sans-serif; 
+  margin: 0; 
+  background-color: #f3f4f6;
+}
+
+.sidebar { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  bottom: 0; 
+  width: 260px; 
+  padding-top: 1rem; 
+  background: #ffffff; 
+  border-right: 1px solid #e5e7eb; 
+  box-shadow: 4px 0 15px rgba(0,0,0,0.02);
+}
+
+.main { 
+  margin-left: 260px; 
+  padding: 2rem; 
+  min-height: 100vh;
+}
+
+/* Premium Table Styles */
+.custom-table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table thead th {
+  background-color: #f9fafb;
+  color: #4b5563;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 1rem 1.5rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.table tbody td {
+  padding: 1rem 1.5rem;
+  vertical-align: middle;
+  color: #1f2937;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.875rem;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f9fafb;
+  transition: all 0.2s ease;
+}
+
+/* Badge Styles */
+.badge-pill {
+  padding: 0.4em 0.8em;
+  border-radius: 50px;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.badge-verified {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-not-verified {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Glassmorphism effects */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 768px) {
+  .sidebar { width: 0; display: none; }
+  .main { margin-left: 0; padding: 1rem; }
+  
+  .table-responsive {
+    border: 0;
+  }
+  
+  /* Stacked table for mobile if preferred, but scrollable is safer for many columns */
+  .table thead {
+    display: table-header-group;
+  }
+}
+
+.sort-icon {
+  font-size: 0.7rem;
+  margin-left: 4px;
+  color: #9ca3af;
+}
+
+.sort-active {
+  color: #6366f1;
+}
