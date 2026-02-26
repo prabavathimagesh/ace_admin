@@ -261,6 +261,7 @@ export const MASTER_PATHS = {
   ACCOMMODATION: "/accommodations",
   EVENT_HOST: "/event-hosts",
 
+  // test
   // LOCATION
   COUNTRY: "/countries",
   STATE: "/states",
